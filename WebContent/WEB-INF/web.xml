@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+		xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+							http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+	id="WebApp_ID" version="3.1">
+<!--====================================== index ====================================== -->
+	<display-name>spring</display-name>
+	<welcome-file-list>
+		<!--
+			index.jsp => main.jsp 파일명 변경.
+			메인 페이지로 사용할 것이기에 연관 단어로 변경함.
+		-->
+		<welcome-file>main.jsp</welcome-file>
+	</welcome-file-list>
+	
+<!--
+	본인 [Servers] – [context.xml] 파일에 아래 source 추가. 
+	
+	<Resource auth="Container"
+		maxActive="100" maxxldle="30" maxWait="10000"
+		type="javax.sql.DataSource" name="jdbc/Oracle11g"
+		url="jdbc:oracle:thin:@127.0.0.1:1521:[DB_SID]"
+		driverClassName="oracle.jdbc.driver.OracleDriver"
+		username="[DB_USERNAME]"
+		password="[DB_PASSWORD]" />
+-->
+<!--====================================== 스프링 관련 설정 ====================================== -->
+	<servlet>
+		<servlet-name>spring</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>/WEB-INF/config/*.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	
+	<!-- *.trmk로 쓸 경우 분명 누군가는 view단에 안 써서 터질까봐 '/'로 바꿈 -->
+	<servlet-mapping>
+		<servlet-name>spring</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+	
+<!--====================================== URL jsession 노출 제거 ====================================== -->
+	<session-config>
+	    <tracking-mode>COOKIE</tracking-mode>
+	</session-config>
+	
+<!--====================================== Encoding ====================================== -->
+	<filter>
+		<filter-name>encodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+		<init-param>
+			<param-name>forceEncoding</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>encodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+</web-app>

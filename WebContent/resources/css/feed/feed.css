@@ -1,0 +1,119 @@
+@charset "UTF-8";
+/*============================================= 메인 게시글 목록 =============================================*/
+body {
+	background-color: #FFFFFF;
+	margin: 0px auto;
+	padding: 0px;
+	font-size: 0px;
+}
+
+/* 	STREAM 	*/
+#feed_wrap {
+	width: 98vw;
+	margin: auto;
+	margin-bottom: 60px;
+	transition: all ease-in .5s;
+}
+
+.feed_card_grid {
+	margin: auto;
+	width: 1350px;
+	-webkit-column-count: 5;
+	-webkit-column-width: 100px;
+	-webkit-column-gap: 10px;
+	-moz-column-count: 5;
+	-moz-column-width: 100px;
+	-moz-column-gap: 5px;
+	column-count: 5;
+	column-width: 100px;
+	column-gap: 5px;
+	padding-bottom: 20px;
+}
+
+.feed_card {
+	margin: auto;
+	display: inline-block;
+	font-size: 0px; /* inline-block 여백 제거 */
+	-webkit-column-break-inside: avoid;
+	-moz-column-break-inside: avoid;
+	width: 258px;
+	margin: 10px 0 4px 0;
+	border-radius: 6px;
+	background-color: white;
+	box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.feed_card>img {
+	width: 258px;
+	border-radius: 6px;
+}
+
+.feed_card:hover {
+	opacity: 0.8;
+	cursor: zoom-in;
+}
+
+/* 	MEDIA QUERIES 	*/
+@media screen and (max-width: 1400px) {
+	.feed_card_grid {
+		width: 1076px;
+		text-align: center;
+		-webkit-column-count: 4;
+		-webkit-column-width: 100px;
+		-webkit-column-gap: 5px;
+		-moz-column-count: 4;
+		-moz-column-width: 100px;
+		-moz-column-gap: 5px;
+		column-count: 4;
+		column-width: 100px;
+		column-gap: 5px;
+	}
+}
+
+@media screen and (max-width: 1100px) {
+	.feed_card_grid {
+		width: 810px;
+		text-align: center;
+		-webkit-column-count: 3;
+		-webkit-column-width: 100px;
+		-webkit-column-gap: 5px;
+		-moz-column-count: 3;
+		-moz-column-width: 100px;
+		-moz-column-gap: 5px;
+		column-count: 3;
+		column-width: 100px;
+		column-gap: 5px;
+	}
+}
+
+@media screen and (max-width: 800px) {
+	.feed_card_grid {
+		width: 544px;
+		text-align: center;
+		-webkit-column-count: 2;
+		-webkit-column-width: 100px;
+		-webkit-column-gap: 5px;
+		-moz-column-count: 2;
+		-moz-column-width: 100px;
+		-moz-column-gap: 5px;
+		column-count: 2;
+		column-width: 100px;
+		column-gap: 5px;
+	}
+}
+
+@media screen and (max-width: 500px) {
+	.feed_card_grid {
+		width: 278px;
+		text-align: center;
+		-webkit-column-count: 1;
+		-webkit-column-width: 100px;
+		-webkit-column-gap: 5px;
+		-moz-column-count: 1;
+		-moz-column-width: 100px;
+		-moz-column-gap: 5px;
+		column-count: 1;
+		column-width: 100px;
+		column-gap: 5px;
+	}
+}

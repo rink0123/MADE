@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- HbeMember_KANG MIN SUNG -->
+<mapper namespace="com.made.view.dao.FeedViewDAO">
+<!-- =================================== 메인 게시글_상세보기_신고-답변, 신고 =================================== -->
+	<!-- 신고-답변 조회 -->
+	<resultMap type="com.made.view.vo.RpAnswerVO" id="select_rpanswer">
+		<result property="rpans_no" column="RPANS_NO" />
+		<result property="rpans_title" column="RPANS_TITLE" />
+		<result property="rpans_content" column="RPANS_CONTENT" />
+	</resultMap>
+	<select id="feedViewSelectRpAnswer" resultMap="select_rpanswer">
+		SELECT 
+		    RPANS_NO        <!-- 신고-답변 번호 -->
+		    , RPANS_TITLE   <!-- 신고-답변 제목 -->
+		    , RPANS_CONTENT <!-- 신고-답변 내용 -->
+		FROM RPANSWER
+	</select>
+	
+	<!-- 신고 삽입 -->
+	<insert id="feedViewInsertReport" parameterType="com.made.view.vo.ReportVO">
+		<selectKey keyProperty="rp_no" resultType="String" order="BEFORE">
+			SELECT 'RP'||TO_CHAR(SYSDATE, 'YYYYMMDD')||LPAD(COMMNO.RP_NO, 4, '0') AS RP_NO
+			FROM
+			(
+			    SELECT /*+ INDEX_DESC(REPORT_PK) */
+			        NVL(MAX(SUBSTR(RP_NO, -4)), 0) + 1 AS RP_NO
+			    FROM REPORT
+			    WHERE SUBSTR(RP_NO, 3, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			) COMMNO
+		</selectKey>
+		INSERT INTO REPORT
+		(
+		    RP_NO           <!-- 신고 번호 -->
+		    , BM_NO         <!-- 신고자(회원번호) -->
+		    , RP_BNO        <!-- 신고한 글(모든글번호) -->
+		    , RPANS_CONTENT <!-- 신고-답변 내용 -->
+		    , RP_INSERTDATE <!-- 신고 등록일 -->
+		    , RP_REPLYDATE  <!-- 신고 답변일 -->
+		)
+		VALUES
+		(
+		    #{rp_no}
+		    , #{bm_no} <!-- sessionScope.bm_no -->
+		    , #{rp_bno}
+		    , #{rpans_content}
+		    , DEFAULT
+		    , ''
+		)
+	</insert>
+	
+<!-- =================================== 메인 게시글_상세보기 이미지 =================================== -->
+	<!-- 이미지 조회 -->
+	<resultMap type="com.made.view.vo.FeedImageVO" id="select_feedimage">
+		<result property="fi_no" column="FI_NO" />
+		<result property="fi_path" column="FI_PATH" />
+		<result property="fi_file" column="FI_FILE" />
+		<result property="feed_no" column="FEED_NO" />
+	</resultMap>
+	<select id="feedViewSelectImage" parameterType="com.made.view.vo.FeedVO" resultMap="select_feedimage">
+		SELECT
+		    FI_NO     <!-- 메인 게시글 이미지 번호 -->
+		    , FI_PATH <!-- 메인 게시글 이미지 파일경로 -->
+		    , FI_FILE <!-- 메인 게시글 이미지 파일명 -->
+		    , FEED_NO <!-- 메인 게시글 번호 -->
+		FROM FEEDIMAGE
+		WHERE FEED_NO = #{feed_no} <!-- 메인 게시글 번호 -->
+		ORDER BY FI_NO DESC
+	</select>
+	
+	<!-- 이미지 삽입 -->
+	<insert id="feedViewInsertImage" parameterType="com.made.view.vo.FeedImageVO">
+		<selectKey keyProperty="fi_no" resultType="String" order="BEFORE">
+			SELECT 'FI'||TO_CHAR(SYSDATE, 'YYYYMMDD')||LPAD(COMMNO.FI_NO, 4, '0') AS FI_NO
+			FROM
+			(
+			    SELECT /*+ INDEX_DESC(FEEDIMAGE_PK) */
+			        NVL(MAX(SUBSTR(FI_NO, -4)), 0) + 1 AS FI_NO
+			    FROM FEEDIMAGE
+			    WHERE SUBSTR(FI_NO, 3, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			) COMMNO
+		</selectKey>
+		INSERT INTO FEEDIMAGE
+		(
+		    FI_NO     <!-- 메인 게시글 이미지 번호 -->
+		    , FI_PATH <!-- 메인 게시글 이미지 파일경로 -->
+		    , FI_FILE <!-- 메인 게시글 이미지 파일명 -->
+		    , FEED_NO <!-- 메인 게시글 번호 -->
+		)
+		VALUES
+		(
+		    #{fi_no}     <!-- 메인 게시글 이미지 번호 -->
+		    , DEFAULT    <!-- 메인 게시글 이미지 파일경로 -->
+		    , #{fi_file} <!-- 메인 게시글 이미지 파일명 -->
+		    , #{feed_no} <!-- 메인 게시글 번호 -->
+		)
+	</insert>
+	
+	<!-- 이미지 삭제 -->
+	<delete id="feedViewDeleteImage" parameterType="com.made.view.vo.FeedImageVO">
+		DELETE FROM FEEDIMAGE
+		WHERE FI_NO = #{fi_no} <!-- 메인 게시글 이미지 번호 -->
+	</delete>
+	
+<!-- =================================== 메인 게시글_상세보기_글내용 =================================== -->
+	<!-- 글내용 조회 -->
+	<resultMap type="com.made.view.vo.FeedVO" id="select_feedview">
+		<result property="feed_no" column="FEED_NO" />
+		<result property="feed_type_cd" column="FEED_TYPE_CD" />
+		<result property="feed_title" column="FEED_TITLE" />
+		<result property="bm_no" column="BM_NO" />
+		<result property="feed_content" column="FEED_CONTENT" />
+		<result property="bm_nick" column="BM_NICK" /> 
+		<result property="bm_img" column="BM_IMG" />
+	</resultMap>
+	<select id="feedViewSelectContent" parameterType="com.made.view.vo.FeedVO" resultMap="select_feedview">
+		SELECT
+		    FD.FEED_NO        <!-- 메인 게시글 번호 -->
+		    , FD.FEED_TYPE_CD <!-- 메인 게시글 작성자(회원번호) -->
+		    , FD.FEED_TITLE   <!-- 메인 게시글 제목 -->
+		    , FD.BM_NO        <!-- 메인 게시글 메뉴 구분 코드 -->
+		    , FD.FEED_CONTENT <!-- 메인 게시글 내용 -->
+		    , BM.BM_NICK      <!-- 일반회원 프로필사진 -->
+		    , BM.BM_IMG       <!-- 일반회원 닉네임 -->
+		FROM FEED FD LEFT JOIN BASICMEMBER BM ON FD.BM_NO = BM.BM_NO
+		WHERE FD.FEED_NO = #{feed_no} <!-- 메인 게시글 번호 -->
+		AND FEED_DELETEYN = 'Y'       <!-- 메인 게시글 삭제여부 -->
+	</select>
+	
+	<!-- 글내용 삽입 체크 -->
+	<resultMap type="com.made.view.vo.FeedVO" id="select_feedinsert_chk">
+		<result property="feed_no" column="FEED_NO" />
+	</resultMap>
+	<select id="feedViewContentChk" parameterType="com.made.view.vo.FeedVO" resultMap="select_feedinsert_chk">
+		SELECT FEED.FEED_NO <!-- 메인 게시글 번호 -->
+		FROM
+		(
+		    SELECT FEED_NO, ROW_NUMBER() OVER (ORDER BY FEED_NO DESC) AS RNK
+		    FROM FEED
+		    WHERE FEED_DELETEYN = 'Y'
+		    AND BM_NO = #{bm_no}
+		) FEED
+		WHERE FEED.RNK = 1 <!-- 최신글 첫번째꺼 추출 -->
+	</select>
+	
+	<!-- 글내용 삽입 -->
+	<insert id="feedViewInsertContent" parameterType="com.made.view.vo.FeedVO">
+		<selectKey keyProperty="feed_no" resultType="String" order="BEFORE">
+			SELECT 'FEED'||TO_CHAR(SYSDATE, 'YYYYMMDD')||LPAD(COMMNO.FEED_NO, 4, '0') AS FEED_NO
+			FROM
+			(
+			    SELECT /*+ INDEX_DESC(FEED_PK) */
+			        NVL(MAX(SUBSTR(FEED_NO, -4)), 0) + 1 AS FEED_NO
+			    FROM FEED
+			    WHERE SUBSTR(FEED_NO, 5, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			) COMMNO
+		</selectKey>
+		INSERT INTO FEED
+		(
+		    FEED_NO           <!-- 메인 게시글 번호 -->
+			, BM_NO           <!-- 일반회원 번호(작성자) -->
+			, FEED_TYPE_CD    <!-- 메인 게시글 메뉴 구분 코드 -->
+			, FEED_TITLE      <!-- 메인 게시글 제목 -->
+			, FEED_CONTENT    <!-- 메인 게시글 내용 -->
+			, FEED_DELETEYN   <!-- 메인 게시글 삭제여부 -->
+			, FEED_INSERTDATE <!-- 메인 게시글 등록일 -->
+			, FEED_UPDATEDATE <!-- 메인 게시글 수정일 -->
+			, FEED_DELETEDATE <!-- 메인 게시글 삭제일 -->
+		)
+		VALUES
+		(
+			#{feed_no}
+			, #{bm_no}
+			, #{feed_type_cd}
+			, #{feed_title}
+			, #{feed_content}
+			, DEFAULT
+			, DEFAULT
+			, DEFAULT
+			, ''
+		)
+	</insert>
+	
+	<!-- 글내용 수정 -->
+	<update id="feedViewUpdateContent" parameterType="com.made.view.vo.FeedVO">
+		UPDATE FEED SET 
+			FEED_TYPE_CD = #{feed_type_cd}
+			, FEED_TITLE = #{feed_title}
+			, FEED_CONTENT = #{feed_content}
+			, FEED_UPDATEDATE = SYSDATE
+		WHERE FEED_NO = #{feed_no}
+	</update>
+	
+	<!-- 글내용 삭제 -->
+	<update id="feedViewDeleteContent" parameterType="com.made.view.vo.FeedVO">
+	<!--
+		{ CALL DECLARE BEGIN 내용 END } 를 쓰든 DECLARE BEGIN 내용 END; 로 쓰든 문제 없다.
+	-->
+		<!-- {
+			CALL -->
+			DECLARE
+			BEGIN
+			<if test="feed_no != null and feed_no != ''">
+				UPDATE FEED SET FEED_DELETEYN = 'N', FEED_DELETEDATE = SYSDATE WHERE FEED_NO = #{feed_no};
+				DELETE FROM FEEDIMAGE WHERE FEED_NO = #{feed_no};
+			</if>
+			END;
+		<!-- } -->
+	</update>
+	
+<!-- =================================== 메인 게시글_상세보기 좋아요 =================================== -->
+	<!-- 좋아요 조회 -->
+	<resultMap type="com.made.view.vo.FeedLikeVO" id="select_feedlike">
+		<result property="fl_no" column="FL_NO" />
+		<result property="fl_chk" column="FL_CHK" />
+	</resultMap>
+	<select id="feedViewSelectLike" parameterType="com.made.view.vo.FeedLikeVO" resultMap="select_feedlike">
+		SELECT FL.FL_NO, COUNT(FL.FL_NO) AS FL_CHK
+		FROM FEEDLIKE FL RIGHT JOIN DUAL
+		    ON FL.FEED_NO = #{feed_no} <!-- 좋아요 메인 게시글 번호 -->
+		    AND FL.BM_NO = #{session_bm_no} <!-- sessionScope.bm_no -->
+		GROUP BY FL.FL_NO
+	</select>
+	
+	<!-- 좋아요 삽입 -->
+	<insert id="feedViewInsertLike" parameterType="com.made.view.vo.FeedLikeVO">
+		<selectKey keyProperty="fl_no" resultType="String" order="BEFORE">
+			SELECT 'FL'||TO_CHAR(SYSDATE, 'YYYYMMDD')||LPAD(COMMNO.FL_NO, 4, '0') AS FL_NO
+			FROM
+			(
+			    SELECT /*+ INDEX_DESC(FEEDLIKE_PK) */
+			        NVL(MAX(SUBSTR(FL_NO, -4)), 0) + 1 AS FL_NO
+			    FROM FEEDLIKE
+			    WHERE SUBSTR(FL_NO, 3, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			) COMMNO
+		</selectKey>
+		INSERT INTO FEEDLIKE
+		(
+		    FL_NO     <!-- 좋아요 번호 -->
+		    , FEED_NO <!-- 좋아요 메인 게시글 번호 -->
+		    , BM_NO   <!-- 좋아요 회원번호 -->
+		)
+		VALUES
+		(
+		    #{fl_no}
+		    , #{feed_no}       <!-- 메인 게시글 번호 -->
+		    , #{session_bm_no} <!-- sessionScope.bm_no -->
+		)
+	</insert>
+	
+	<!-- 좋아요 삭제 -->
+	<delete id="feedViewDeleteLike" parameterType="com.made.view.vo.FeedLikeVO">
+		DELETE FROM FEEDLIKE
+		WHERE FL_NO = #{fl_no}
+	</delete>
+	
+<!-- =================================== 메인 게시글_상세보기_팔로우 =================================== -->
+	<!-- 팔로우 조회 -->
+	<resultMap type="com.made.view.vo.FollowVO" id="select_follow">
+		<result property="follow_no" column="FOLLOW_NO" />
+		<result property="follow_chk" column="FOLLOW_CHK" />
+		<result property="follower_cnt" column="FOLLOWER_CNT" />
+	</resultMap>
+	<select id="feedViewSelectFollow" parameterType="com.made.view.vo.FollowVO" resultMap="select_follow">
+		SELECT
+		    FOLLOW.FOLLOW_NO        <!-- 팔로우 번호 -->
+		    , FOLLOWER.FOLLOWER_CNT <!-- 팔로워 수 -->
+		    , FOLLOW.FOLLOW_CHK     <!-- 팔로우 체크 -->
+		FROM
+		(
+		    SELECT COUNT(REG_BM_NO) AS FOLLOWER_CNT
+		    FROM FOLLOW
+		    WHERE REG_BM_NO = #{bm_no} <!-- 메인 게시글 작성자(회원번호) -->
+		) FOLLOWER,
+		(
+		    SELECT F.FOLLOW_NO, COUNT(F.BM_NO) AS FOLLOW_CHK
+		    FROM FOLLOW F RIGHT JOIN DUAL
+		    	ON F.BM_NO = #{session_bm_no} <!-- session_bm_no -->
+		    	AND F.REG_BM_NO = #{bm_no}    <!-- 메인 게시글 작성자(회원번호) -->
+		    GROUP BY F.FOLLOW_NO
+		) FOLLOW
+	</select>
+	
+	<!-- 팔로우 삽입 -->
+	<insert id="feedViewInsertFollow" parameterType="com.made.view.vo.FollowVO">
+		<selectKey keyProperty="follow_no" resultType="String" order="BEFORE">
+			SELECT 'F'||TO_CHAR(SYSDATE, 'YYYYMMDD')||LPAD(COMMNO.FOLLOW_NO, 4, '0') AS FOLLOW_NO
+			FROM
+			(
+			    SELECT /*+ INDEX_DESC(FOLLOW_PK) */
+			        NVL(MAX(SUBSTR(FOLLOW_NO, -4)), 0) + 1 AS FOLLOW_NO
+			    FROM FOLLOW
+			    WHERE SUBSTR(FOLLOW_NO, 2, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			) COMMNO
+		</selectKey>
+		INSERT INTO FOLLOW
+		(
+		    FOLLOW_NO   <!-- 팔로우 번호 -->
+		    , BM_NO     <!-- 팔로우 회원번호 -->
+		    , REG_BM_NO <!-- 팔로워 회원번호 -->
+		)
+		VALUES
+		(
+		    #{follow_no}
+		    , #{session_bm_no} <!-- session_bm_no -->
+		    , #{bm_no}         <!-- 메인 게시글 작성자(회원번호) -->
+		)
+	</insert>
+	
+	<!-- 팔로우 삭제 -->
+	<delete id="feedViewDeleteFollow" parameterType="com.made.view.vo.FollowVO">
+		DELETE FROM FOLLOW
+		WHERE FOLLOW_NO = #{follow_no}
+	</delete>
+	
+<!-- =================================== 메인 게시글_상세보기 댓글 =================================== -->
+	<!-- 댓글 조회 -->
+	<resultMap type="com.made.view.vo.CommentsVO" id="select_comments">
+		<result property="cmt_no" column="CMT_NO" />
+		<result property="cmt_bm_no" column="BM_NO" />
+		<result property="cmt_bm_nick" column="BM_NICK" />
+		<result property="cmt_bm_img" column="BM_IMG" />
+		<result property="cmt_content" column="CMT_CONTENT" />
+		<result property="cmt_updatedate" column="CMT_UPDATEDATE" />
+		<result property="cmt_cnt" column="CMT_CNT" />
+	</resultMap>
+	<select id="feedViewSelectComments" parameterType="com.made.view.vo.FeedVO" resultMap="select_comments">
+	    SELECT
+		    CMT.CMT_NO        <!-- 댓글 번호 -->            
+		    , CMT.BM_NO       <!-- 댓글 작성자(회원번호) -->     
+		    , BM.BM_NICK      <!-- 댓글 작성자(닉네임) -->
+		    , BM.BM_IMG       <!-- 댓글 작성자(프로필 사진) -->
+		    , CMT.CMT_CONTENT <!-- 댓글 내용 -->
+		    , CASE WHEN TO_CHAR(CMT_UPDATEDATE, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+		        THEN TO_CHAR(CMT_UPDATEDATE, 'HH24:MI')
+		        ELSE TO_CHAR(CMT_UPDATEDATE, 'YYYY-MM-DD')
+		        END AS CMT_UPDATEDATE <!-- 댓글 수정일 -->
+		    , CMT_CNT.CMT_CNT         <!-- 댓글 수 -->
+		FROM COMMENTS CMT LEFT JOIN BASICMEMBER BM ON CMT.BM_NO = BM.BM_NO
+		, ( -- <!-- 댓글 수 인라인 뷰 -->
+		    SELECT TO_CHAR(COUNT(CMT_NO), '999,999,999,999') AS CMT_CNT
+		    FROM COMMENTS
+		    WHERE FEED_NO = #{feed_no} <!-- 메인 게시글 번호 -->
+		    AND CMT_DELETEYN = 'Y'     <!-- 댓글 삭제여부 -->
+		) CMT_CNT
+		WHERE CMT.FEED_NO = #{feed_no} <!-- 메인 게시글 번호 -->
+		AND CMT.CMT_DELETEYN = 'Y'     <!-- 댓글 삭제여부 -->
+		ORDER BY CMT.CMT_INSERTDATE DESC
+	</select>
+	
+	<!-- 댓글 삽입 -->
+	<insert id="feedViewInsertComments" parameterType="com.made.view.vo.CommentsVO">
+		<selectKey keyProperty="cmt_no" resultType="String" order="BEFORE">
+			SELECT 'CMT'||TO_CHAR(SYSDATE, 'YYYYMMDD')||LPAD(COMMNO.CMT_NO, 4, '0') AS CMT_NO
+			FROM
+			(
+			    SELECT /*+ INDEX_DESC(COMMENTS_PK) */
+			        NVL(MAX(SUBSTR(CMT_NO, -4)), 0) + 1 AS CMT_NO
+			    FROM COMMENTS
+			    WHERE SUBSTR(CMT_NO, 4, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			) COMMNO
+		</selectKey>
+		INSERT INTO COMMENTS
+		(
+			CMT_NO           <!-- 댓글 번호 -->
+			, FEED_NO        <!-- 메인 게시글 번호 -->
+			, BM_NO          <!-- 댓글 작성자(회원번호) -->
+			, CMT_CONTENT    <!-- 댓글 내용 -->
+			, CMT_DELETEYN   <!-- 댓글 삭제여부 -->
+			, CMT_INSERTDATE <!-- 댓글 등록일 -->
+			, CMT_UPDATEDATE <!-- 댓글 수정일 -->
+			, CMT_DELETEDATE <!-- 댓글 삭제일 -->
+
+		)
+		VALUES
+		(
+			#{cmt_no}          <!-- 댓글 번호 -->         
+			, #{cmt_feed_no}   <!-- 메인 게시글 번호 -->     
+			, #{cmt_bm_no}     <!-- 댓글 작성자(회원번호) -->  
+			, #{cmt_content}   <!-- 댓글 내용 -->         
+			, DEFAULT          <!-- 댓글 삭제여부 -->       
+			, DEFAULT          <!-- 댓글 등록일 -->        
+			, DEFAULT          <!-- 댓글 수정일 -->        
+			, ''               <!-- 댓글 삭제일 -->        
+		)
+	</insert>
+	
+	<!-- 댓글 수정 -->
+	<update id="feedViewUpdateComments" parameterType="com.made.view.vo.CommentsVO">
+		UPDATE COMMENTS SET 
+			CMT_CONTENT = #{cmt_content} <!-- 댓글 내용 -->
+			, CMT_UPDATEDATE = SYSDATE   <!-- 댓글 수정일 -->
+		WHERE CMT_NO = #{cmt_no} <!-- 댓글 번호 -->
+		AND CMT_DELETEYN = 'Y'   <!-- 댓글 삭제여부 -->
+	</update>
+	
+	<!-- 댓글 삭제 -->
+	<update id="feedViewDeleteComments" parameterType="com.made.view.vo.CommentsVO">
+		UPDATE COMMENTS SET
+			CMT_DELETEYN = 'N'         <!-- 댓글 삭제여부 -->
+			, CMT_DELETEDATE = SYSDATE <!-- 댓글 삭제일 -->
+		WHERE CMT_NO = #{cmt_no} <!-- 댓글 번호 -->
+		AND CMT_DELETEYN = 'Y'   <!-- 댓글 삭제여부 -->
+	</update>
+	
+<!-- =================================== 메인 게시글_상세보기 댓글-답변 =================================== -->
+	<!-- 댓글-답변 조회 -->
+	<resultMap type="com.made.view.vo.CmtAnswerVO" id="select_cmtanswer">
+		<result property="cmtans_cmt_no" column="CMT_NO" />
+		<result property="cmtans_no" column="CMTANS_NO" />
+		<result property="cmtans_bm_no" column="BM_NO" />
+		<result property="cmtans_bm_nick" column="BM_NICK" />
+		<result property="cmtans_bm_img" column="BM_IMG" />
+		<result property="cmtans_content" column="CMTANS_CONTENT" />
+		<result property="cmtans_updatedate" column="CMTANS_UPDATEDATE" />
+	</resultMap>
+	<select id="feedViewSelectCmtAnswer" resultMap="select_cmtanswer">
+	    SELECT
+	        CMTANS.CMT_NO           <!-- 댓글 번호 -->             
+	        , CMTANS.CMTANS_NO      <!-- 댓글-답글 번호 -->          
+	        , CMTANS.BM_NO          <!-- 댓글-답글 작성자(회원번호) -->   
+	        , BM.BM_NICK            <!-- 댓글-답글 작성자(닉네임) -->    
+	        , BM.BM_IMG             <!-- 댓글-답글 작성자(프로필 사진) -->    
+	        , CMTANS.CMTANS_CONTENT <!-- 댓글-답글 내용 -->          
+	        , CASE WHEN TO_CHAR(CMTANS_UPDATEDATE, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+	            THEN TO_CHAR(CMTANS_UPDATEDATE, 'HH24:MI')
+	            ELSE TO_CHAR(CMTANS_UPDATEDATE, 'YYYY-MM-DD')
+	            END AS CMTANS_UPDATEDATE <!-- 댓글-답글 수정일 -->
+	    FROM CMTANSWER CMTANS LEFT JOIN BASICMEMBER BM ON CMTANS.BM_NO = BM.BM_NO
+	    WHERE CMTANS.CMTANS_DELETEYN = 'Y' <!-- 댓글-답글 삭제여부 -->
+	    ORDER BY CMTANS.CMTANS_INSERTDATE DESC
+	</select>
+	
+	<!-- 댓글-답글 삽입 -->
+	<insert id="feedViewInsertCmtAnswer" parameterType="com.made.view.vo.CmtAnswerVO">
+		<selectKey keyProperty="cmtans_no" resultType="String" order="BEFORE">
+			SELECT 'CMTANS'||TO_CHAR(SYSDATE, 'YYYYMMDD')||LPAD(COMMNO.CMTANS_NO, 4, '0') AS CMTANS_NO
+			FROM
+			(
+			    SELECT /*+ INDEX_DESC(CMTANSWER_PK) */
+			        NVL(MAX(SUBSTR(CMTANS_NO, -4)), 0) + 1 AS CMTANS_NO
+			    FROM CMTANSWER
+			    WHERE SUBSTR(CMTANS_NO, 7, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			) COMMNO
+		</selectKey>
+		INSERT INTO CMTANSWER
+		(
+			CMTANS_NO           <!-- 댓글-답글 번호 -->
+			, CMT_NO            <!-- 댓글 번호 -->
+			, BM_NO             <!-- 댓글-답글 작성자(회원번호) -->
+			, CMTANS_CONTENT    <!-- 댓글-답글 내용 -->
+			, CMTANS_DELETEYN   <!-- 댓글-답글 삭제여부 -->
+			, CMTANS_INSERTDATE <!-- 댓글-답글 등록일 -->
+			, CMTANS_UPDATEDATE <!-- 댓글-답글 수정일 -->
+			, CMTANS_DELETEDATE <!-- 댓글-답글 삭제일 -->
+		)
+		VALUES
+		(
+			#{cmtans_no}        <!-- 댓글-답글 번호 -->
+			, #{cmtans_cmt_no}  <!-- 댓글 번호 -->
+			, #{cmtans_bm_no}   <!-- 댓글-답글 작성자(회원번호) -->
+			, #{cmtans_content} <!-- 댓글-답글 내용 -->
+			, DEFAULT           <!-- 댓글-답글 삭제여부 -->
+			, DEFAULT           <!-- 댓글-답글 등록일 -->
+			, DEFAULT           <!-- 댓글-답글 수정일 -->
+			, ''                <!-- 댓글-답글 삭제일 -->
+		)
+	</insert>
+	
+	<!-- 댓글-답글 수정 -->
+	<update id="feedViewUpdateCmtAnswer" parameterType="com.made.view.vo.CmtAnswerVO">
+		UPDATE CMTANSWER SET
+		CMTANS_CONTENT = #{cmtans_content} <!-- 댓글-답글 내용 -->
+			, CMTANS_UPDATEDATE = SYSDATE  <!-- 댓글-답글 수정일 -->
+		WHERE CMTANS_NO = #{cmtans_no} <!-- 댓글-답글 번호 -->
+		AND CMTANS_DELETEYN = 'Y'      <!-- 댓글-답글 삭제여부 -->
+	</update>
+	
+	<!-- 댓글-답글 삭제 -->
+	<update id="feedViewDeleteCmtAnswer" parameterType="com.made.view.vo.CmtAnswerVO">
+		UPDATE CMTANSWER SET
+		CMTANS_DELETEYN = 'N'             <!-- 댓글-답글 삭제여부 -->
+			, CMTANS_DELETEDATE = SYSDATE <!-- 댓글-답글 삭제일 -->
+		WHERE CMTANS_NO = #{cmtans_no} <!-- 댓글-답글 번호 -->
+		AND CMTANS_DELETEYN = 'Y'      <!-- 댓글-답글 삭제여부 -->
+	</update>
+</mapper>

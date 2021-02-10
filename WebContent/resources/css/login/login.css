@@ -1,0 +1,91 @@
+@charset "UTF-8";
+/*============================================= 로그인, 회원가입 =============================================*/
+body {
+	margin: 0px;
+	padding: 0px;
+	width: 100%;
+	height: 100vh;
+	background: #000000;
+	font-family: sans-serif;
+}
+
+/* made로고 */
+img {
+	display: block;
+	margin: 0px auto;
+}
+
+.login-form {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 300px;
+	padding: 60px 40px;
+	background: rgba(255, 255, 255, 0.8);
+	box-shadow: 0 15px 20px rgba(0, 0, 0, 0.1); /* 로그인폼박스의 투명도 는 맨 뒷자리 수 */
+}
+
+.login-form .form-input {
+	position: relative;
+	margin: 20px 0px;
+}
+
+.login-form .form-input input {
+	outline: none;
+	height: 40px;
+	padding: 10px;
+	box-sizing: border-box;
+	width: 100%;
+	border: 1px solid rgba(0, 0, 0, 0.5);
+	background: transparent;
+	font-size: 18px;
+}
+
+.login-form .form-input input[type="button"] {
+	background: #E91E63; /* login버튼 박스컬러 */
+	color: #FFFFFF; /* login버튼 폰트컬러 */
+	border: none;
+	cursor: pointer;
+	text-transform: uppercase; /* login버튼의 폰트를 대문자로 */
+}
+
+.login-form .form-input input[type="button"]:hover {
+	background: #0090FF; /* 로그인 박스에 마우스커서 이동시 색상변경 */
+}
+
+.login-form .forget {
+	display: block;
+	margin-top: 30px; /* 비밀번호찾기 폰트와 로그인박스의 간격 */
+	color: #000000;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.login-form .signin {
+	display: block;
+	margin-top: 30px;
+	color: #000000;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.join_popup input[type='text']::placeholder {
+	font-size: 12px;
+}
+
+.join_popup input[type='password']::placeholder {
+	font-size: 12px;
+}
+
+/*============ z-index background ============*/
+.feedview_back_index {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	top: 0px;
+	left: 0px;
+	background-color: #000000;
+	opacity:0.3;
+	z-index: 100;
+}

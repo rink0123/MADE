@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- HbeMember_JANG JUN HEE -->
+<mapper namespace="com.made.login.dao.LoginDAO">
+<!-- ================================= 일반 로그인 ================================= -->
+	<resultMap type="com.made.login.vo.MemberVO" id="basicLogin">
+		<result property="bm_no" column="BM_NO" />
+		<result property="bm_id" column="BM_ID" />
+		<result property="bm_nick" column="BM_NICK" />
+		<result property="bm_pw" column="BM_PW" />
+		<result property="bm_img" column="BM_IMG" />
+		<result property="bm_auth" column="BM_AUTH" />
+	</resultMap>
+	<select id="basicLogin" parameterType="com.made.login.vo.MemberVO" resultMap="basicLogin">
+		SELECT
+			BM_NO     <!-- 일반회원 번호 -->
+			, BM_ID   <!-- 일반회원 아이디 -->
+			, BM_NICK <!-- 일반회원 닉네임 -->
+			, BM_PW   <!-- 일반회원 비밀번호 -->
+			, BM_IMG  <!-- 일반회원 프로필 사진 -->
+			, BM_AUTH <!-- 일반회원 권한 -->
+		FROM BASICMEMBER
+		WHERE BM_ID = #{bm_id} <!-- 일반회원 아이디 -->  
+		AND BM_PW = #{bm_pw}   <!-- 일반회원 비밀번호 --> 
+		AND BM_DELETEYN = 'Y'  <!-- 일반회원 삭제여부 --> 
+	</select>
+	
+<!-- ================================= 아이디 찾기 ================================= -->
+	<resultMap type="com.made.login.vo.MemberVO" id="basicFindId">
+		<result property="bm_id" column="BM_ID" />
+	</resultMap>
+	<select id="basicFindId" parameterType="com.made.login.vo.MemberVO" resultMap="basicFindId">
+		SELECT
+			BM_ID <!-- 일반회원 아이디 -->  
+		FROM BASICMEMBER
+		WHERE BM_NAME = #{bm_name} <!-- 일반회원 아이디 -->  
+		AND BM_EMAIL = #{bm_email} <!-- 일반회원 이름 -->  
+		AND BM_DELETEYN = 'Y'  <!-- 일반회원 삭제여부 --> 
+	</select>
+	
+<!-- ================================= 비밀번호 찾기_임시 비밀번호로 수정 ================================= -->
+	<update id="basicFindPwUpdate" parameterType="com.made.login.vo.MemberVO">
+		UPDATE BASICMEMBER SET
+			BM_PW = (SELECT DBMS_RANDOM.STRING('X', 13) FROM DUAL)
+		WHERE BM_ID = #{bm_id}     <!-- 일반회원 아이디 -->
+		AND BM_EMAIL = #{bm_email} <!-- 일반회원 비밀번호 -->
+		AND BM_DELETEYN = 'Y'
+	</update>
+	
+<!-- ================================= 비밀번호 찾기_임시 비밀번호 보내기 ================================= -->
+	<resultMap type="com.made.login.vo.MemberVO" id="basicFindPwSend">
+		<result property="bm_id" column="BM_ID" />
+		<result property="bm_pw" column="BM_PW" />
+		<result property="bm_email" column="BM_EMAIL" />
+	</resultMap>
+	<select id="basicFindPwSend" parameterType="com.made.login.vo.MemberVO" resultMap="basicFindPwSend">
+		SELECT
+			BM_ID      <!-- 일반회원 아이디 -->
+			, BM_PW    <!-- 일반회원 비밀번호 -->
+			, BM_EMAIL <!-- 일반회원 이메일 -->
+		FROM BASICMEMBER
+		WHERE BM_ID = #{bm_id}     <!-- 일반회원 아이디 -->
+		AND BM_EMAIL = #{bm_email} <!-- 일반회원 비밀번호 -->
+		AND BM_DELETEYN = 'Y'
+	</select>
+	
+<!-- ================================= 회원가입 ================================= -->
+	<insert id="basicJoin" parameterType="com.made.login.vo.MemberVO">
+		<selectKey keyProperty="bm_no" resultType="String" order="BEFORE">
+			SELECT 'BM'||TO_CHAR(SYSDATE, 'YYYYMMDD')||LPAD(COMMNO.BM_NO, 4, '0') AS BM_NO
+			FROM
+			(
+			    SELECT /*+ INDEX_DESC(BASICMEMBER_PK) */
+			        NVL(MAX(SUBSTR(BM_NO, -4)), 0) + 1 AS BM_NO
+			    FROM BASICMEMBER
+			    WHERE SUBSTR(BM_NO, 3, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			) COMMNO
+		</selectKey>
+		INSERT INTO BASICMEMBER
+		(
+			BM_NO           <!-- 일반회원 번호 -->
+			, BM_ID         <!-- 일반회원 아이디 -->
+			, BM_PW         <!-- 일반회원 비밀번호 -->
+			, BM_IMG        <!-- 일반회원 프로필사진 -->
+			, BM_NICK       <!-- 일반회원 닉네임 -->
+			, BM_NAME       <!-- 일반회원 이름 -->
+			, BM_PHONE      <!-- 일반회원 휴대폰 -->
+			, BM_EMAIL      <!-- 일반회원 이메일 -->
+			, BM_AUTH       <!-- 일반회원 권한 -->
+			, BM_DELETEYN   <!-- 일반회원 삭제여부 -->
+			, BM_INSERTDATE <!-- 일반회원 가입일 -->
+			, BM_UPDATEDATE <!-- 일반회원 수정일 -->
+			, BM_DELETEDATE <!-- 일반회원 삭제일 -->
+		)
+		VALUES
+		(
+			#{bm_no}      <!-- 일반회원 번호 -->   
+			, #{bm_id}    <!-- 일반회원 아이디 -->  
+			, #{bm_pw}    <!-- 일반회원 비밀번호 --> 
+			, ''          <!-- 일반회원 프로필사진 -->
+			, #{bm_nick}  <!-- 일반회원 닉네임 -->  
+			, #{bm_name}  <!-- 일반회원 이름 -->   
+			, #{bm_phone} <!-- 일반회원 휴대폰 -->  
+			, #{bm_email} <!-- 일반회원 이메일 -->  
+			, DEFAULT     <!-- 일반회원 권한, DEFAULT 0 -->   
+			, DEFAULT     <!-- 일반회원 삭제여부, DEFAULT 'Y' --> 
+			, DEFAULT     <!-- 일반회원 가입일 DEFAULT SYSDATE -->  
+			, DEFAULT     <!-- 일반회원 수정일 DEFAULT SYSDATE -->  
+			, ''          <!-- 일반회원 삭제일 -->  
+		)
+	</insert>
+	
+<!-- ================================= 회원가입_아이디 중복체크 ================================= -->
+	<select id="basicJoinIdChk" parameterType="com.made.login.vo.MemberVO" resultType="int">
+		SELECT
+			COUNT(BM_ID) AS BM_IDCHK <!-- 회원가입 아이디 중복체크 -->
+		FROM BASICMEMBER
+		WHERE BM_ID = #{bm_id} <!-- 일반회원 아이디 -->
+	</select>
+	
+</mapper>

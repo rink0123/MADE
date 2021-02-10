@@ -1,0 +1,198 @@
+@charset "UTF-8";
+/*============================================= 프로필 일반회원 정보 =============================================*/
+/* 프로필_wrap */
+.profile {
+	text-align: center;
+	margin: auto;
+	padding: 0px 20px 0px 20px;
+	width: 975px;
+	max-width: 975px;
+	font-size: 0px;
+}
+
+/* 프로필_wrap_하위태그(div) */
+.profile div {
+	box-sizing: border-box;
+}
+
+/* 프로필_사진 박스 */
+.profile_photo {
+	display: inline-block;
+	position: relative;
+}
+
+/* 프로필_사진 */
+.profile_img {
+	background-color: #F1F1F1;
+	position: absolute;
+	object-fit: cover;
+	top: 0px;
+	left: 0px;
+	bottom: 0px;
+	right: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+/* 프로필_일반회원 정보 헤더 */
+.profile_column {
+	display: inline-block;
+	vertical-align: top;
+	padding: 10px;
+	margin-left: 20px;
+	color: #111111;
+}
+
+/* 프로필_일반회원 닉네임 */
+.profile_usernick {
+	display: inline-block;
+	font-size: 28px;
+	font-weight: 300;
+	max-width: 495px;
+	padding-right: 20px;
+	word-break: break-all;
+}
+
+/* 프로필_팔로우 버튼, 프로필_편집 버튼 */
+.profile_follow_btn, .profile_edit_btn {
+	display: inline-block;
+	vertical-align: top;
+	float: right;
+	border-radius: 3px;
+	font-size: 18px;
+	font-weight: 600;
+	padding: 4px 25px;
+	margin: 1.5px 0px;
+	cursor: pointer;
+}
+
+/* 프로필_편집 버튼 */
+.profile_edit_btn {
+	background-color: #FFFFFF;
+	border: 1px solid #DBDBDB;
+	color: #111111;
+}
+
+/* 프로필_게시물 통계, 팔로워 통계, 팔로우 통계 */
+.profile_stat {
+	display: inline-block;
+	margin-left: 40px;
+	cursor: pointer;
+}
+
+/* 프로필_일반회원 이름 */
+.profile_username {
+	font-size: 16px;
+	font-weight: 600;
+	max-width: 510px;
+	word-break: break-all;
+}
+
+/* 프로필_메인 게시글 HOVER */
+.profile_feed .profile_photo:hover {
+	opacity: 0.8;
+	cursor: zoom-in;
+}
+/*============================================= 팔로워 팝업창, 팔로우 팝업창 =============================================*/
+/* 팔로워 팝업창, 팔로우 팝업창 */
+.followers_modal, .following_modal {
+	background-color: #FFFFFF;
+	position: fixed;
+	z-index: 200;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	box-sizing: border-box;
+	border-radius: 12px;
+	font-size: 0px;
+	width: 400px;
+	max-width: 400px;
+}
+
+/* 팔로워 팝업창_하위태그(div), 팔로우 팝업창_하위태그(div) */
+.followers_modal div, .following_modal div {
+	box-sizing: border-box;
+}
+
+/* 팔로워 팝업창_제목, 팔로우 팝업창_제목 */
+.followers_modal_title, .following_modal_title {
+	display: inline-block;
+	vertical-align: top;
+	text-align: center;
+	font-size: 16px;
+	font-weight: 600;
+	color: #111111;
+	padding: 10px 0px;
+	width: 316px;
+}
+
+/* 팔로워 팝업창_닫기 버튼, 팔로우 팝업창_닫기 버튼 */
+#followers_modal_closebtn, #following_modal_closebtn {
+	display: inline-block;
+	width: 24px;
+	height: 24px;
+	padding: 9px;
+	cursor: pointer;
+}
+
+/* 팔로워 팝업창_목록, 팔로우 팝업창_목록 */
+.followers_modal_list, .following_modal_list {
+	text-align: left;
+	overflow-y: auto;
+	width: 100%;
+	max-height: 358px;
+}
+
+/* 팔로워 팝업창_일반회원정보, 팔로우 팝업창_일반회원정보 */
+.followers_modal_user, .following_modal_user {
+	display: inline-block;
+	max-width: 255px;
+	padding: 0px 16px;
+}
+
+/* 팔로워 팝업창_일반회원 닉네임, 팔로우 팝업창_일반회원 닉네임 */
+.followers_modal_usernick, .following_modal_usernick {
+	word-break: break-all;
+	font-size: 14px;
+	font-weight: 600;
+	color: #111111;
+	cursor: pointer;
+}
+
+/* 팔로워 팝업창_일반회원 이름, 팔로우 팝업창_일반회원 이름 */
+.followers_modal_username, .following_modal_username {
+	word-break: break-all;
+	font-size: 12px;
+	font-weight: 400;
+	color: #8E8E8E;
+}
+
+/* 팔로워 팝업창_팔로우 버튼, 팔로우 팝업창_팔로우 버튼 */
+.followers_modal_followbtn, .following_modal_followbtn {
+	display: inline-block;
+	vertical-align: top;
+	float: right;
+	border-radius: 3px;
+	font-size: 14px;
+	font-weight: 600;
+	padding: 5px 9px;
+	margin: 3px 0px;
+	cursor: pointer;
+}
+
+/* 팔로워 팝업창_프로필 사진 HOVER, 팔로우 팝업창_프로필 사진 HOVER */
+.followers_modal_profile .profile_photo:hover, .following_modal_profile .profile_photo:hover {
+	cursor: pointer;
+}
+
+/* 프로필_overlay */
+.profile_overlay {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	top: 0px;
+	left: 0px;
+	background-color: #000000;
+	opacity: 0.3;
+	z-index: 100;
+}

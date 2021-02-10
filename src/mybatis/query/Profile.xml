@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- HbeMember_KIM YUNG JIN, KIM HYUNG SEOP -->
+<mapper namespace="com.made.profile.dao.ProfileDAO">
+<!--================================= 프로필 정보 =================================-->
+	<!-- 프로필 정보_일반회원 정보 조회 -->
+	<resultMap type="com.made.profile.vo.MemberVO" id="profile_select_member">
+		<result property="bm_no" column="BM_NO"/>
+		<result property="bm_nick" column="BM_NICK"/>
+		<result property="bm_name" column="BM_NAME"/>
+		<result property="bm_img" column="BM_IMG"/>
+	</resultMap>	
+	<select id="profileSelectMember" parameterType="com.made.profile.vo.MemberVO" resultMap="profile_select_member">
+		SELECT
+			BM_NO     <!-- 일반회원 번호 -->
+			, BM_NICK <!-- 일반회원 닉네임 -->
+			, BM_NAME <!-- 일반회원 이름 -->
+			, BM_IMG  <!-- 일반회원 프로필사진 -->
+		FROM BASICMEMBER
+		WHERE BM_NO = #{bm_no} <!-- 일반회원 번호 -->
+		AND BM_DELETEYN = 'Y'
+	</select>
+	
+	<!-- 프로필 정보_메인 게시글 조회 -->
+	<resultMap type="com.made.profile.vo.FeedImageVO" id="profile_select_feed">
+		<result property="fi_path" column="FI_PATH"/>
+		<result property="fi_file" column="FI_FILE"/>
+		<result property="feed_no" column="FEED_NO"/>
+	</resultMap>	
+	<select id="profileSelectFeed" parameterType="com.made.profile.vo.MemberVO" resultMap="profile_select_feed">
+		SELECT
+	        FI.FI_PATH     <!-- 메인 게시글 이미지 파일경로 -->
+	        , FI.FI_FILE   <!-- 메인 게시글 이미지 파일명 -->
+	        , FI.FEED_NO   <!-- 메인 게시글 번호 -->
+		FROM FEED FEED LEFT JOIN
+		    (
+		        SELECT IMG.FI_NO, IMG.FI_PATH, IMG.FI_FILE, IMG.FEED_NO, IMG.RNK
+		        FROM ( SELECT FI_NO, FI_PATH, FI_FILE, FEED_NO, ROW_NUMBER() OVER(PARTITION BY FEED_NO ORDER BY FI_NO DESC) AS RNK FROM FEEDIMAGE ) IMG
+		        WHERE IMG.RNK = 1
+		    ) FI
+		    ON FEED.FEED_NO = FI.FEED_NO
+		    LEFT JOIN BASICMEMBER BM ON FEED.BM_NO = BM.BM_NO
+		WHERE FEED.BM_NO = #{bm_no} <!-- 일반회원 번호 -->
+		AND BM.BM_DELETEYN = 'Y'
+		AND FEED.FEED_DELETEYN = 'Y'
+		ORDER BY FEED.FEED_UPDATEDATE DESC
+	</select>
+	
+	<!-- 프로필 정보_팔로우 조회(AJAX) -->
+	<resultMap type="com.made.profile.vo.FollowVO" id="profile_select_follow">
+		<result property="follow_chk" column="FOLLOW_CHK"/>
+	</resultMap>	
+	<select id="profileSelectFollow" parameterType="com.made.profile.vo.MemberVO" resultMap="profile_select_follow">
+		SELECT COUNT(FOLLOW_NO) AS FOLLOW_CHK <!-- 팔로우 체크 -->
+		FROM FOLLOW
+		WHERE BM_NO = #{session_bm_no} <!-- 일반회원 번호(본인) -->
+		AND REG_BM_NO = #{bm_no} <!-- 일반회원 번호(상대) -->
+	</select>
+
+	<!-- 프로필 정보_팔로워 팝업창 목록 조회(AJAX) -->
+	<resultMap type="com.made.profile.vo.FollowVO" id="profile_select_follower">
+		<result property="bm_no" column="REG_BM_NO"/>
+		<result property="bm_img" column="BM_IMG"/>
+		<result property="bm_nick" column="BM_NICK"/>
+		<result property="bm_name" column="BM_NAME"/>
+		<result property="follow_chk" column="FOLLOW_CHK"/>
+		<result property="follow_cnt" column="FOLLOW_CNT"/>
+	</resultMap>	
+	<select id="profileSelectFollowers" parameterType="com.made.profile.vo.MemberVO" resultMap="profile_select_follower">
+		SELECT
+		    FOLLOWERS.BM_NO        <!-- 일반회원 버호(본인) -->
+		    , FOLLOWERS.BM_IMG     <!-- 일반회원 프로필사진 -->
+		    , FOLLOWERS.BM_NICK    <!-- 일반회원 닉네임 -->
+		    , FOLLOWERS.BM_NAME    <!-- 일반회원 이름 -->
+		    , FOLLOWERS.FOLLOW_CHK <!-- 팔로우 체크 -->
+		    , FOLLOWERS.FOLLOW_CNT <!-- 팔로우 수 -->
+		FROM
+		(
+			SELECT
+			    F.BM_NO, BM.BM_IMG, BM.BM_NICK, BM.BM_NAME
+			    , NVL2(CHK.REG_BM_NO, 1, 0) AS FOLLOW_CHK
+			    , CEIL(ROW_NUMBER() OVER(ORDER BY F.FOLLOW_NO DESC) / 10) AS CURPAGE
+			    , COUNT(F.FOLLOW_NO) OVER() AS FOLLOW_CNT
+			FROM FOLLOW F LEFT JOIN BASICMEMBER BM ON F.BM_NO = BM.BM_NO
+			LEFT JOIN
+			(
+			    SELECT REG_BM_NO
+			    FROM FOLLOW
+			    WHERE BM_NO = #{session_bm_no} <!-- session_bm_no -->
+			) CHK ON F.BM_NO = CHK.REG_BM_NO
+			WHERE F.REG_BM_NO = #{bm_no} <!-- 일반회원 번호 -->
+			AND BM.BM_DELETEYN = 'Y'     <!-- 일반회원 삭제여부 -->
+		) FOLLOWERS
+		WHERE FOLLOWERS.CURPAGE = #{followers_curpage} <!-- 팔로워 목록 현재 페이지 -->
+	</select>
+	
+	<!-- 프로필 정보_팔로우 팝업창 목록 조회(AJAX) -->
+	<resultMap type="com.made.profile.vo.FollowVO" id="profile_select_following">
+		<result property="reg_bm_no" column="REG_BM_NO"/>
+		<result property="bm_img" column="BM_IMG"/>
+		<result property="bm_nick" column="BM_NICK"/>
+		<result property="bm_name" column="BM_NAME"/>
+		<result property="follow_chk" column="FOLLOW_CHK"/>
+		<result property="follow_cnt" column="FOLLOW_CNT"/>
+	</resultMap>	
+	<select id="profileSelectFollowing" parameterType="com.made.profile.vo.MemberVO" resultMap="profile_select_following">
+		SELECT
+		    FOLLOWING.REG_BM_NO    <!-- 일반회원 번호(상대) -->
+		    , FOLLOWING.BM_IMG     <!-- 일반회원 프로필사진 -->
+		    , FOLLOWING.BM_NICK    <!-- 일반회원 닉네임 -->
+		    , FOLLOWING.BM_NAME    <!-- 일반회원 이름 -->
+		    , FOLLOWING.FOLLOW_CHK <!-- 팔로우 체크 -->
+		    , FOLLOWING.FOLLOW_CNT <!-- 팔로우 수 -->
+		FROM
+		(
+			SELECT
+			    F.REG_BM_NO, BM.BM_IMG, BM.BM_NICK, BM.BM_NAME
+			    , NVL2(CHK.REG_BM_NO, 1, 0) AS FOLLOW_CHK
+			    , CEIL(ROW_NUMBER() OVER(ORDER BY F.FOLLOW_NO DESC) / 10) AS CURPAGE
+			    , COUNT(F.FOLLOW_NO) OVER() AS FOLLOW_CNT
+			FROM FOLLOW F LEFT JOIN BASICMEMBER BM ON F.REG_BM_NO = BM.BM_NO
+			LEFT JOIN
+			(
+			    SELECT REG_BM_NO
+			    FROM FOLLOW
+			    WHERE BM_NO = #{session_bm_no} <!-- session_bm_no -->
+			) CHK ON F.REG_BM_NO = CHK.REG_BM_NO
+			WHERE F.BM_NO = #{bm_no} <!-- 일반회원 번호 -->
+			AND BM.BM_DELETEYN = 'Y' <!-- 일반회원 삭제여부 -->
+		) FOLLOWING
+		WHERE FOLLOWING.CURPAGE = #{following_curpage} <!-- 팔로워 목록 현재 페이지 -->
+	</select>
+	
+	<!-- 프로필 정보_팔로우 삽입(AJAX) -->
+	<insert id="ProfileInsertFollow" parameterType="com.made.profile.vo.FollowVO">
+		<selectKey keyProperty="follow_no" resultType="String" order="BEFORE">
+			SELECT 'F'||TO_CHAR(SYSDATE, 'YYYYMMDD')||LPAD(COMMNO.FOLLOW_NO, 4, '0') AS FOLLOW_NO
+			FROM
+			(
+			    SELECT /*+ INDEX_DESC(FOLLOW_PK) */
+			        NVL(MAX(SUBSTR(FOLLOW_NO, -4)), 0) + 1 AS FOLLOW_NO
+			    FROM FOLLOW
+			    WHERE SUBSTR(FOLLOW_NO, 2, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			) COMMNO
+		</selectKey>
+		INSERT INTO FOLLOW
+		(
+		    FOLLOW_NO   <!-- 팔로우 번호 -->
+		    , BM_NO     <!-- 일반회원 번호(본인) -->
+		    , REG_BM_NO <!-- 일반회원 번호(상대) -->
+		)
+		VALUES
+		(
+		    #{follow_no}   <!-- 팔로우 번호 -->
+		    , #{bm_no}     <!-- session_bm_no -->
+		    , #{reg_bm_no} <!-- 팔로워 할 회원번호 -->
+		)
+	</insert>
+	
+	<!-- 프로필 정보_팔로우 삭제(AJAX) -->
+	<delete id="ProfileDeleteFollow" parameterType="com.made.profile.vo.FollowVO">
+		DELETE FROM FOLLOW
+		WHERE BM_NO = #{bm_no}       <!-- session_bm_no -->
+		AND REG_BM_NO = #{reg_bm_no} <!-- 팔로워 한 회원번호 -->
+	</delete>
+	
+<!--================================= 프로필 편집 =================================-->
+	<!-- 프로필 편집_프로필 편집 조회(AJAX) -->
+	<resultMap type="com.made.profile.vo.MemberVO" id="edit_select_member">
+		<result property="bm_img" column="BM_IMG"/>
+		<result property="bm_name" column="BM_NAME"/>
+		<result property="bm_nick" column="BM_NICK"/>
+		<result property="bm_email" column="BM_EMAIL"/>
+		<result property="bm_phone" column="BM_PHONE"/>
+	</resultMap>	
+	<select id="editSelectMember" parameterType="com.made.profile.vo.MemberVO" resultMap="edit_select_member">
+		SELECT
+			BM_IMG     <!-- 일반회원 프로필사진 -->
+			, BM_NAME  <!-- 일반회원 이름 -->
+			, BM_NICK  <!-- 일반회원 닉네임 -->
+			, BM_EMAIL <!-- 일반회원 이메일 -->
+			, BM_PHONE <!-- 일반회원 연락처 -->
+		FROM BASICMEMBER
+		WHERE BM_NO = #{bm_no} <!-- session_bm_no -->
+		AND BM_DELETEYN = 'Y'  <!-- 일반회원 삭제여부 -->
+	</select>
+	
+	<!-- 프로필 편집_프로필 편집 갱신(AJAX) -->
+	<update id="editUpdateMember" parameterType="com.made.profile.vo.MemberVO">
+		UPDATE BASICMEMBER SET
+			BM_NAME = #{bm_name}     <!-- 일반회원 이름 -->
+			, BM_NICK = #{bm_nick}   <!-- 일반회원 닉네임 -->
+			, BM_EMAIL = #{bm_email} <!-- 일반회원 이메일 -->
+			, BM_PHONE = #{bm_phone} <!-- 일반회원 연락처 -->
+		WHERE BM_NO = #{bm_no} <!-- session_bm_no -->
+		AND BM_DELETEYN = 'Y'  <!-- 일반회원 삭제여부 -->
+	</update>
+	
+	<!-- 프로필 편집_프로필 사진 갱신(AJAX) -->
+	<update id="editUpdateProfileImg" parameterType="com.made.profile.vo.MemberVO">
+		UPDATE BASICMEMBER SET
+			BM_img = #{bm_img} <!-- 일반회원 프로필 사진 -->
+		WHERE BM_NO = #{bm_no} <!-- session_bm_no -->
+		AND BM_DELETEYN = 'Y'  <!-- 일반회원 삭제여부 -->
+	</update>
+	
+	<!-- 프로필 편집_프로필 사진 삭제(AJAX) -->
+	<update id="editDeleteProfileImg" parameterType="com.made.profile.vo.MemberVO">
+		UPDATE BASICMEMBER SET
+			BM_img = '' <!-- 일반회원 프로필 사진 -->
+		WHERE BM_NO = #{bm_no} <!-- session_bm_no -->
+		AND BM_DELETEYN = 'Y'  <!-- 일반회원 삭제여부 -->
+	</update>
+	
+	<!-- 프로필 편집_비밀번호 변경(AJAX) -->
+	<update id="editUpdatePw" parameterType="com.made.profile.vo.MemberVO">
+		UPDATE BASICMEMBER SET
+			BM_PW = #{new_bm_pw} <!-- 일반회원 새 비밀번호 -->
+		WHERE BM_NO = #{bm_no} <!-- session_bm_no -->
+		AND BM_PW = #{bm_pw}   <!-- 일반회원 비밀번호 -->
+		AND BM_DELETEYN = 'Y'  <!-- 일반회원 삭제여부 -->
+	</update>
+	
+	<!-- 프로필 편집_계정 삭제(AJAX) -->
+	<update id="editDeleteMember" parameterType="com.made.profile.vo.MemberVO">
+		UPDATE BASICMEMBER SET
+			BM_DELETEYN = 'N' <!-- 일반회원 삭제여부 -->
+		WHERE BM_NO = #{bm_no} <!-- session_bm_no -->
+		AND BM_PW = #{bm_pw}   <!-- 일반회원 비밀번호 -->
+		AND BM_DELETEYN = 'Y'  <!-- 일반회원 삭제여부 -->
+	</update>
+	
+	<!-- 프로필 편집_1:1문의 목록 조회(AJAX) -->
+	<resultMap type="com.made.profile.vo.ComplainVO" id="edit_selectlist_complain">
+		<result property="cp_no" column="CP_NO"/>
+		<result property="cp_title" column="CP_TITLE"/>
+		<result property="cp_content" column="CP_CONTENT"/>
+		<result property="cp_updatedate" column="CP_UPDATEDATE"/>
+		<result property="cpans_content" column="CPANS_CONTENT"/>
+	</resultMap>	
+	<select id="editSelectListComplain" parameterType="com.made.profile.vo.ComplainVO" resultMap="edit_selectlist_complain">
+		SELECT
+			CP.CP_NO           <!-- 1:1문의 번호 -->
+		    , CP.CP_TITLE      <!-- 1:1문의 제목 -->
+		    , CP.CP_CONTENT    <!-- 1:1문의 내용 -->
+		    , CP.CP_UPDATEDATE <!-- 1:1문의 수정일 -->
+		    , CP.CPANS_CONTENT <!-- 1:1문의-답변 내용 -->
+		FROM
+		(
+		    SELECT
+		    	CP.CP_NO
+		        , CP.CP_TITLE
+		        , CP.CP_CONTENT
+		        , CASE WHEN TO_CHAR(TO_DATE(CP.CP_UPDATEDATE), 'YYYYMMDD') != TO_CHAR(TO_DATE(SYSDATE), 'YYYYMMDD')
+		            THEN TO_CHAR(TO_DATE(CP.CP_UPDATEDATE), 'YYYY-MM-DD')
+		            ELSE TO_CHAR(TO_DATE(CP.CP_UPDATEDATE), 'HH24:MI')
+		            END AS CP_UPDATEDATE
+		        , CPANS.CPANS_CONTENT
+		        , CEIL(ROW_NUMBER() OVER(ORDER BY CP.CP_UPDATEDATE DESC) / 10) AS CURPAGE
+		    FROM COMPLAIN CP LEFT JOIN CPANSWER CPANS ON CP.CP_NO = CPANS.CP_NO
+		    WHERE CP.CP_DELETEYN = 'Y' <!-- 1:1문의 삭제여부 -->
+		    AND CP.BM_NO = #{bm_no}    <!-- 일반회원 번호(작성자) -->
+		) CP
+		WHERE CP.CURPAGE = #{cp_curpage} <!-- 현재페이지 -->
+		ORDER BY CP.CP_UPDATEDATE DESC
+	</select>
+	
+	<!-- 프로필 편집_1:1문의 상세 조회(AJAX) -->
+	<resultMap type="com.made.profile.vo.ComplainVO" id="edit_selectview_complain">
+		<result property="cp_no" column="CP_NO"/>
+		<result property="cp_title" column="CP_TITLE"/>
+		<result property="cp_content" column="CP_CONTENT"/>
+	</resultMap>	
+	<select id="editSelectViewComplain" parameterType="com.made.profile.vo.ComplainVO" resultMap="edit_selectview_complain">
+	    SELECT
+	    	CP_NO        <!-- 1:1문의 번호 -->
+	        , CP_TITLE   <!-- 1:1문의 제목 -->
+	        , CP_CONTENT <!-- 1:1문의 내용 -->
+	    FROM COMPLAIN
+	    WHERE CP_DELETEYN = 'Y' <!-- 1:1문의 삭제여부 -->
+	    AND CP_NO = #{cp_no}    <!-- 1:1문의 번호 -->
+	</select>
+	
+	<!-- 프로필 편집_1:1문의 갱신(AJAX) -->
+	<update id="editUpdateComplain" parameterType="com.made.profile.vo.ComplainVO">
+		UPDATE COMPLAIN SET
+			CP_TITLE = #{cp_title}       <!-- 1:1문의 제목 -->
+			, CP_CONTENT = #{cp_content} <!-- 1:1문의 내용 -->
+		WHERE CP_NO = #{cp_no} <!-- 1:1문의 번호 -->
+		AND CP_DELETEYN = 'Y'  <!-- 1:1문의 삭제여부 -->
+	</update>
+	
+	<!-- 프로필 편집_1:1문의 삭제(AJAX) -->
+	<update id="editDeleteComplain" parameterType="com.made.profile.vo.ComplainVO">
+		UPDATE COMPLAIN SET
+			CP_DELETEYN = 'N' <!-- 1:1문의 삭제여부 -->
+		WHERE CP_NO = #{cp_no} <!-- 1:1문의 번호 -->
+		AND CP_DELETEYN = 'Y'  <!-- 1:1문의 삭제여부 -->
+	</update>
+</mapper>

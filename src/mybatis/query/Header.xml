@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- HbeMember_Common -->
+<mapper namespace="com.made.common.dao.HeaderDAO">
+<!-- ================================= 헤더_알림 ================================= -->
+	<!-- 헤더_알림 수 조회 -->
+	<resultMap type="com.made.common.vo.HeaderVO" id="header_select_noticecnt">
+		<result property="notice_cnt" column="NOTICE_CNT" />
+	</resultMap>
+	<select id="headerSelectNoticeCnt" parameterType="String" resultMap="header_select_noticecnt">
+		SELECT FOLLOW.NOTICE_CNT + FEEDLIKE.NOTICE_CNT + COMMENTS.NOTICE_CNT + CMTANSWER.NOTICE_CNT AS NOTICE_CNT
+		FROM
+		( <!-- 팔로우 알림 -->
+		    SELECT COUNT(F.FOLLOW_NO) AS NOTICE_CNT
+		    FROM FOLLOW F LEFT JOIN BASICMEMBER BM ON F.BM_NO = BM.BM_NO
+		    WHERE F.REG_BM_NO = #{session_bm_no} <!-- 세션_일반회원 번호 -->
+		    AND TO_CHAR(TO_DATE(SUBSTR(F.FOLLOW_NO, 2, 8)), 'YYYYMMDD') = TO_CHAR(TO_DATE(SYSDATE), 'YYYYMMDD')
+		) FOLLOW
+		, ( <!-- 좋아요 알림 -->
+		    SELECT COUNT(FL.FL_NO) AS NOTICE_CNT
+		    FROM FEEDLIKE FL LEFT JOIN FEED FEED ON FL.FEED_NO = FEED.FEED_NO
+		                     LEFT JOIN BASICMEMBER BM ON FL.BM_NO = BM.BM_NO
+		    WHERE FEED.BM_NO = #{session_bm_no} <!-- 세션_일반회원 번호 -->
+		    AND FEED.BM_NO != FL.BM_NO
+		    AND TO_CHAR(TO_DATE(SUBSTR(Fl.FL_NO, 3, 8)), 'YYYYMMDD') = TO_CHAR(TO_DATE(SYSDATE), 'YYYYMMDD')
+		) FEEDLIKE
+		, ( <!-- 댓글 알림 -->
+		    SELECT COUNT(CMT.CMT_NO) AS NOTICE_CNT
+		    FROM FEED FEED LEFT JOIN COMMENTS CMT ON FEED.FEED_NO = CMT.FEED_NO
+		                   LEFT JOIN BASICMEMBER BM ON CMT.BM_NO = BM.BM_NO
+		    WHERE FEED.BM_NO = #{session_bm_no} <!-- 세션_일반회원 번호 -->
+		    AND FEED.BM_NO != CMT.BM_NO
+		    AND TO_CHAR(TO_DATE(SUBSTR(CMT.CMT_NO, 4, 8)), 'YYYYMMDD') = TO_CHAR(TO_DATE(SYSDATE), 'YYYYMMDD')
+		) COMMENTS
+		, ( <!-- 답글 알림 -->
+		    SELECT COUNT(CMTANS.CMTANS_NO) AS NOTICE_CNT
+		    FROM FEED FEED LEFT JOIN COMMENTS CMT ON FEED.FEED_NO = CMT.FEED_NO
+		                   LEFT JOIN CMTANSWER CMTANS ON CMT.CMT_NO = CMTANS.CMT_NO
+		                   LEFT JOIN BASICMEMBER BM ON CMT.BM_NO = BM.BM_NO
+		    WHERE CMT.BM_NO = #{session_bm_no} <!-- 세션_일반회원 번호 -->
+		    AND CMT.BM_NO != CMTANS.BM_NO
+		    AND TO_CHAR(TO_DATE(SUBSTR(CMTANS.CMTANS_NO, 7, 8)), 'YYYYMMDD') = TO_CHAR(TO_DATE(SYSDATE), 'YYYYMMDD')
+		) CMTANSWER
+	</select>
+	
+	<!-- 헤더_알림 내용 조회 -->
+	<resultMap type="com.made.common.vo.HeaderVO" id="header_select_noticecontent">
+		<result property="notice_index" column="NOTICE_INDEX" />
+		<result property="notice_no" column="NOTICE_NO" />
+		<result property="bm_nick" column="BM_NICK" />
+		<result property="notice_date" column="NOTICE_DATE" />
+	</resultMap>
+	<select id="headerSelectNoticeContent" parameterType="String" resultMap="header_select_noticecontent">
+		SELECT
+		    NOTICE_INDEX
+		    , NOTICE_NO
+		    , BM_NICK
+		    , NOTICE_DATE
+		FROM
+		(
+			<!-- 팔로우 알림 내용 -->
+		    SELECT
+		        F.FOLLOW_NO AS NOTICE_INDEX
+		        , F.BM_NO AS NOTICE_NO
+		        , BM.BM_NICK AS BM_NICK
+		        , TO_CHAR(TO_DATE(SUBSTR(F.FOLLOW_NO, 2, 8)), 'YYYY-MM-DD') AS NOTICE_DATE
+		    FROM FOLLOW F LEFT JOIN BASICMEMBER BM ON F.BM_NO = BM.BM_NO
+		    WHERE F.REG_BM_NO = #{session_bm_no} <!-- 세션_일반회원 번호 -->
+		    AND F.FOLLOW_NO IS NOT NULL
+		    AND TO_CHAR(TO_DATE(SUBSTR(F.FOLLOW_NO, 2, 8)), 'YYYYMMDD') = TO_CHAR(TO_DATE(SYSDATE), 'YYYYMMDD')
+		    
+		    UNION ALL
+		    
+		    <!-- 좋아요 알림 내용 -->
+		    SELECT
+		        FL.FL_NO AS NOTICE_INDEX
+		        , FEED.FEED_NO AS NOTICE_NO
+		        , BM.BM_NICK AS BM_NICK
+		        , TO_CHAR(TO_DATE(SUBSTR(FL.FL_NO, 3, 8)), 'YYYY-MM-DD') AS NOTICE_DATE
+		    FROM FEEDLIKE FL LEFT JOIN FEED FEED ON FL.FEED_NO = FEED.FEED_NO
+		        LEFT JOIN BASICMEMBER BM ON FL.BM_NO = BM.BM_NO
+		    WHERE FEED.BM_NO = #{session_bm_no} <!-- 세션_일반회원 번호 -->
+		    AND FL.FL_NO IS NOT NULL
+		    AND FEED.BM_NO != FL.BM_NO
+		    AND TO_CHAR(TO_DATE(SUBSTR(Fl.FL_NO, 3, 8)), 'YYYYMMDD') = TO_CHAR(TO_DATE(SYSDATE), 'YYYYMMDD')
+		    
+		    UNION ALL
+		    
+		    <!-- 댓글 알림 내용 -->
+		    SELECT
+		        CMT.CMT_NO AS NOTICE_INDEX
+		        , FEED.FEED_NO AS NOTICE_NO
+		        , BM.BM_NICK AS BM_NICK
+		        , TO_CHAR(TO_DATE(SUBSTR(CMT.CMT_NO, 4, 8)), 'YYYY-MM-DD') AS NOTICE_DATE
+		    FROM FEED FEED LEFT JOIN COMMENTS CMT ON FEED.FEED_NO = CMT.FEED_NO
+		                   LEFT JOIN BASICMEMBER BM ON CMT.BM_NO = BM.BM_NO
+		    WHERE FEED.BM_NO = #{session_bm_no} <!-- 세션_일반회원 번호 -->
+		    AND CMT.CMT_NO IS NOT NULL
+		    AND FEED.BM_NO != CMT.BM_NO
+		    AND TO_CHAR(TO_DATE(SUBSTR(CMT.CMT_NO, 4, 8)), 'YYYYMMDD') = TO_CHAR(TO_DATE(SYSDATE), 'YYYYMMDD')
+		    
+		    UNION ALL
+		    
+		    <!-- 답글 알림 내용 -->
+		    SELECT
+		        CMTANS.CMTANS_NO AS NOTICE_INDEX
+		        , FEED.FEED_NO AS NOTICE_NO
+		        , BM.BM_NICK AS BM_NICK
+		        , TO_CHAR(TO_DATE(SUBSTR(CMTANS.CMTANS_NO, 7, 8)), 'YYYY-MM-DD') AS NOTICE_DATE
+		    FROM FEED FEED LEFT JOIN COMMENTS CMT ON FEED.FEED_NO = CMT.FEED_NO
+		                   LEFT JOIN CMTANSWER CMTANS ON CMT.CMT_NO = CMTANS.CMT_NO
+		                   LEFT JOIN BASICMEMBER BM ON CMTANS.BM_NO = BM.BM_NO
+		    WHERE CMT.BM_NO = #{session_bm_no} <!-- 세션_일반회원 번호 -->
+		    AND CMTANS.CMTANS_NO IS NOT NULL
+		    AND FEED.BM_NO != CMTANS.BM_NO
+		    AND TO_CHAR(TO_DATE(SUBSTR(CMTANS.CMTANS_NO, 7, 8)), 'YYYYMMDD') = TO_CHAR(TO_DATE(SYSDATE), 'YYYYMMDD')
+		) HEADER
+		ORDER BY HEADER.NOTICE_INDEX DESC
+	</select>
+	
+<!-- ================================= 헤더_1:1문의 ================================= -->
+	<!-- 1:1문의 삽입 -->
+	<insert id="headerInsertComplain" parameterType="com.made.common.vo.ComplainVO">
+		<selectKey keyProperty="cp_no" resultType="String" order="BEFORE">
+			SELECT 'CP'||TO_CHAR(SYSDATE, 'YYYYMMDD')||LPAD(COMMNO.CP_NO, 4, '0') AS CP_NO
+			FROM
+			(
+			    SELECT /*+ INDEX_DESC(COMPLAIN_PK) */
+			        NVL(MAX(SUBSTR(CP_NO, -4)), 0) + 1 AS CP_NO
+			    FROM COMPLAIN
+			    WHERE SUBSTR(CP_NO, 3, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+			) COMMNO
+		</selectKey>
+		INSERT INTO COMPLAIN
+		(
+			CP_NO           <!-- 1:1문의 번호 -->
+			, CP_TITLE      <!-- 1:1문의 제목 -->
+			, BM_NO         <!-- 일반회원 번호(작성자) -->
+			, CP_CONTENT    <!-- 1:1문의 내용 -->
+			, CP_DELETEYN   <!-- 1:1문의 삭제여부 -->
+			, CP_INSERTDATE <!-- 1:1문의 등록일 -->
+			, CP_UPDATEDATE <!-- 1:1문의 수정일 -->
+			, CP_DELETEDATE <!-- 1:1문의 삭제일 -->
+		)
+		VALUES
+		(
+		    #{cp_no}        <!-- 1:1문의 번호 -->
+			, #{cp_title}   <!-- 1:1문의 제목 -->
+			, #{bm_no}      <!-- 일반회원 번호(작성자) -->
+			, #{cp_content} <!-- 1:1문의 내용 -->
+			, DEFAULT       <!-- 1:1문의 삭제여부 -->
+			, DEFAULT       <!-- 1:1문의 등록일 -->
+			, DEFAULT       <!-- 1:1문의 수정일 -->
+			, ''            <!-- 1:1문의 삭제일 -->
+		)
+	</insert>
+</mapper>

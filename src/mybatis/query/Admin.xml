@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- HbeMember_SONG SEUNG HYUN -->
+<mapper namespace="com.made.admin.dao.AdminDAO">
+<!-- ================================= 회원 관리 ================================= -->
+	<!-- 회원 관리_목록 -->
+	<resultMap type="com.made.admin.vo.MemberVO" id="adminMemberSelectList">
+		<result property="bm_auth" column="BM_AUTH" />
+		<result property="bm_id" column="BM_ID" />
+		<result property="bm_insertdate" column="BM_INSERTDATE" />
+		<result property="bm_deleteyn" column="BM_DELETEYN" />
+		<result property="curpage" column="CURPAGE" />
+		<result property="totalpage" column="TOTALPAGE" />
+	</resultMap>
+	<select id="adminMemberSelectList" parameterType="com.made.admin.vo.MemberVO" resultMap="adminMemberSelectList">
+		SELECT
+		    BM.BM_AUTH         <!-- 일반회원 권한 -->
+		    , BM.BM_ID         <!-- 일반회원 아이디 -->
+		    , BM.BM_INSERTDATE <!-- 일반회원 가입일 -->
+		    , BM.BM_DELETEYN   <!-- 일반회원 삭제여부 -->
+		    , BM.CURPAGE       <!-- 현재 페이지 -->
+		    , BM.TOTALPAGE     <!-- 총 페이지 -->
+		FROM
+		(
+		    SELECT
+		        CASE WHEN BM.BM_AUTH != '1'
+		            THEN '일반'
+		            ELSE '관리자'
+		            END AS BM_AUTH
+		        , BM.BM_ID
+		        , CASE WHEN TO_CHAR(BM.BM_INSERTDATE, 'YYYYMMDD') != TO_CHAR(SYSDATE, 'YYYYMMDD')
+		            THEN TO_CHAR(TO_DATE(BM.BM_INSERTDATE), 'YYYY-MM-DD')
+		            ELSE TO_CHAR(TO_DATE(BM.BM_INSERTDATE), 'HH24:MI')
+		            END AS BM_INSERTDATE
+		        , CASE WHEN BM_DELETEYN != 'N' AND BL.BL_NO IS NULL THEN '-'
+		            WHEN BM.BM_DELETEDATE > NVL(BL.BL_RELEASEDATE, BM.BM_DELETEDATE - 1) THEN '탈퇴'
+		            WHEN BL.BL_INSERTDATE > NVL(BL.BL_RELEASEDATE, BL.BL_INSERTDATE - 1) THEN '블랙지정'
+		            WHEN BL.BL_RELEASEDATE > BL.BL_INSERTDATE THEN '블랙해제'
+		            END AS BM_DELETEYN
+		        , CEIL(ROW_NUMBER() OVER(ORDER BY BM.BM_NO DESC) / ${pagesize}) AS CURPAGE
+		        , CEIL(COUNT(BM.BM_NO) OVER() / ${pagesize}) AS TOTALPAGE
+		    FROM BASICMEMBER BM LEFT JOIN BLACKLIST BL ON BM.BM_NO = BL.BM_NO
+		) BM
+		<where>
+			<!-- 현재 페이지가 null이 아니고 1이상일 경우 -->
+			<if test="curpage != null and curpage > 1">
+				BM.CURPAGE = #{curpage} <!-- 현재 페이지 -->
+			</if>
+			<!-- 현재 페이지가 1일 경우 -->
+			<if test="curpage == null or curpage == 1">
+				BM.CURPAGE = 1 <!-- 현재 페이지 -->
+			</if>
+		</where>
+	</select>
+	
+<!-- ================================= 게시판 관리 ================================= -->
+	<!-- 게시판 관리_목록 -->
+	<resultMap type="com.made.admin.vo.FeedVO" id="adminFeedSelectList">
+		<result property="feed_no" column="FEED_NO" />
+		<result property="feed_type_cd" column="FEED_TYPE_CD" />
+		<result property="feed_title" column="FEED_TITLE" />
+		<result property="photo_cnt" column="PHOTO_CNT" />
+		<result property="bm_id" column="BM_ID" />
+		<result property="feed_insertdate" column="FEED_INSERTDATE" />
+		<result property="curpage" column="CURPAGE" />
+		<result property="totalpage" column="TOTALPAGE" />
+	</resultMap>
+	<select id="adminFeedSelectList" parameterType="com.made.admin.vo.FeedVO" resultMap="adminFeedSelectList">
+		SELECT
+		    FEED.FEED_NO           <!-- 메인 게시글 번호 -->
+		    , FEED.FEED_TYPE_CD    <!-- 메인 게시글 메뉴 구분 코드 -->
+		    , FEED.FEED_TITLE      <!-- 메인 게시글 제목 -->
+		    , FEED.PHOTO_CNT       <!-- 메인 게시글 사진 수 -->
+		    , FEED.BM_ID           <!-- 일반회원 아이디(작성자) -->
+		    , FEED.FEED_INSERTDATE <!-- 메인 게시글 등록일 -->
+		    , FEED.CURPAGE         <!-- 현재 페이지 -->
+		    , FEED.TOTALPAGE       <!-- 총 페이지 -->
+		FROM
+		(
+		SELECT
+		    FEED.FEED_NO
+		    , CASE WHEN FEED_TYPE_CD = 'FEEDCAT0001' THEN '의류'
+		        WHEN FEED_TYPE_CD = 'FEEDCAT0002' THEN '잡화'
+		        WHEN FEED_TYPE_CD = 'FEEDCAT0003' THEN '코스메틱'
+		        ELSE '액세서리'
+		        END AS FEED_TYPE_CD
+		    , FEED.FEED_TITLE
+		    , FI.PHOTO_CNT
+		    , BM.BM_ID
+		    , CASE WHEN TO_CHAR(FEED.FEED_INSERTDATE, 'YYYYMMDD') != TO_CHAR(SYSDATE, 'YYYYMMDD')
+		        THEN TO_CHAR(FEED.FEED_INSERTDATE, 'YYYY-MM-DD')
+		        ELSE TO_CHAR(FEED.FEED_INSERTDATE, 'HH24:MI:SS')
+		        END AS FEED_INSERTDATE
+		    , CEIL(ROW_NUMBER() OVER(ORDER BY FEED.FEED_NO DESC) / 10) AS CURPAGE
+		    , CEIL(COUNT(FEED.FEED_NO) OVER() / 10) AS TOTALPAGE
+		    , FEED.FEED_DELETEYN
+		FROM FEED FEED LEFT JOIN BASICMEMBER BM ON FEED.BM_NO = BM.BM_NO
+		    LEFT JOIN (SELECT FEED_NO, COUNT(FI_NO) AS PHOTO_CNT FROM FEEDIMAGE GROUP BY FEED_NO) FI ON FEED.FEED_NO = FI.FEED_NO
+		) FEED
+		<where>
+			FEED.FEED_DELETEYN = 'Y' <!-- 메인 게시글 삭제여부 -->
+			<!-- 현재 페이지가 null이 아니고 1이상일 경우 -->
+			<if test="curpage != null and curpage > 1">
+				AND FEED.CURPAGE = #{curpage} <!-- 현재 페이지 -->
+			</if>
+			<!-- 현재 페이지가 1일 경우 -->
+			<if test="curpage == null or curpage == 1">
+				AND FEED.CURPAGE = 1 <!-- 현재 페이지 -->
+			</if>
+		</where>
+	</select>
+</mapper>

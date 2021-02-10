@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- HbeMember_SHIN MIN GYU -->
+<mapper namespace="com.made.feed.dao.FeedDAO">
+<!-- ================================= 메인 게시글_목록 ================================= -->
+	<!-- 메인 게시글_목록 조회 -->
+	<resultMap type="com.made.feed.vo.FeedImageVO" id="feedSelectList">
+		<result property="fi_no" column="FI_NO" />
+		<result property="feed_no" column="FEED_NO" />
+		<result property="fi_path" column="FI_PATH" />
+		<result property="fi_file" column="FI_FILE" />
+	</resultMap>
+	<select id="feedSelectList" parameterType="com.made.feed.vo.FeedImageVO" resultMap="feedSelectList">
+		SELECT
+			FI.FI_NO     <!-- 메인 게시글 이미지 번호   -->
+			, FI.FEED_NO <!-- 메인 게시글 번호 -->
+			, FI.FI_PATH <!-- 메인 게시글 이미지 파일경로 -->
+			, FI.FI_FILE <!-- 메인 게시글 이미지 파일명  -->
+		FROM FEED F LEFT JOIN
+		(
+		    SELECT
+		    	FI.FI_NO
+		    	, FI.FI_PATH
+		    	, FI.FI_FILE
+		    	, FI.FEED_NO
+		    	, FI.RNK
+		    FROM
+		    (
+		    	SELECT
+		    		FI_NO
+		    		, FI_PATH
+		    		, FI_FILE
+		    		, FEED_NO
+		    		, ROW_NUMBER() OVER(PARTITION BY FEED_NO ORDER BY FEED_NO DESC) AS RNK
+		    	FROM FEEDIMAGE
+		    ) FI
+		    WHERE FI.RNK = 1
+		) FI ON F.FEED_NO = FI.FEED_NO <!-- FEEDIMAGE(=메인 게시물 이미지 중 첫번째꺼만) -->
+		<where>
+			F.FEED_DELETEYN = 'Y' <!-- 메인 게시글 삭제여부 -->
+			<if test="feed_search != null and feed_search != ''">
+				<!-- 정규식에 적용시키기 위해 #{value} => ${value} 변경, ${value}는 쿼리상 ''를 안 붙여줌 -->
+				AND (REGEXP_LIKE (F.FEED_TITLE, '[${feed_search}]', 'i') OR REGEXP_LIKE (F.FEED_CONTENT, '[${feed_search}]', 'i')) <!-- 메인 게시글 검색 -->
+				AND (F.FEED_TITLE IS NOT NULL OR F.FEED_CONTENT IS NOT NULL)
+			</if>
+		</where>
+		ORDER BY DBMS_RANDOM.VALUE <!-- 랜덤 정렬 -->
+	</select>
+</mapper>

@@ -1,0 +1,123 @@
+@charset "UTF-8";
+
+body {
+	background-color: #FFFFFF; /* default background-color */
+	margin: 0px;
+	padding: 0px;
+}
+
+/* 화면 전체 */
+.addfeed_wrap {
+	background-color: #FFFFFF;
+	text-align: center;
+	font-size: 0px; /* inline-block 여백제거방법 중 하나 */;
+}
+
+/* 화면 전체_하위태그(전체) */
+.addfeed_wrap * {
+	box-sizing: border-box;
+	color: #111111;
+}
+
+/* 메인 게시글 추가_컨테이너 */
+.addfeed_container {
+	display: inline-block;
+    text-align: center;
+    min-width: 540px;
+    border-radius: 32px;
+    padding: 40px;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 20px 0px;
+}
+
+/* onload 시 window size 조정 */
+@media screen and (max-width: 1100px) {
+	.addfeed_container {
+		width: auto;
+	}
+}
+
+/* 실시간 window size 조정 */
+@media screen and (max-width: 1060px) {
+	.addfeed_container {
+		width: 540px;
+	}
+}
+
+/* 메인 게시글 추가_왼쪽(사진)컨테이너 */
+.addfeed_leftcontainer {
+	display: inline-block;
+	position: relative;
+	vertical-align: top;
+	max-width: 500px;
+}
+
+/* 메인 게시글 추가_오른쪽(내용)컨테이너 */
+.addfeed_rightcontainer {
+	display: inline-block;
+	padding: 20px 40px;
+	max-width: 500px;
+}
+
+/* 메인 게시글 추가_오른쪽(내용) 섹션 선택 */
+.addfeed_feedcat {
+	background-color: #EFEFEF;
+	vertical-align: top;
+    border: none;
+    outline: none;
+	border-radius: 8px 0 0 8px;
+	padding: 0px 14px;
+	font-size: 16px;
+	font-weight: 400;
+	color: #767676;
+	width: 176px;
+	height: 40px;
+    cursor: pointer;
+}
+
+/* 메인 게시글 추가_오른쪽(내용) 글저장 버튼 */
+.addfeed_insertbtn {
+	display: inline-block;
+	vertical-align: top;
+	background-color: #E60023;
+    border-radius: 0px 8px 8px 0px;
+    height: 40px;
+    padding: 8px 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFFFFF;
+    cursor: pointer;
+}
+
+/* 메인 게시글 추가_오른쪽(내용) 제목, 내용 입력란 */
+.addfeed_txt {
+	overflow: hidden;
+	resize: none;
+	outline: none;
+	border: none;
+	margin: 0px;
+	padding: 0px;
+    width: 100%;
+}
+
+/* 메인 게시글 추가_오른쪽(내용) 제목, 내용 입력란 placeholder */
+.addfeed_txt::placeholder {
+	color: #DADADA;
+}
+
+/* 오른쪽(내용)_프로필 사진 */
+.addfeed_photo {
+	display: inline-block;
+	position: relative;
+}
+
+.addfeed_img {
+	background-color: #F1F1F1;
+	position: absolute;
+	object-fit: cover;
+	top: 0px;
+	left: 0px;
+	bottom: 0px;
+	right: 0px;
+	width: 100%;
+	height: 100%;
+}
