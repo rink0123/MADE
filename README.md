@@ -1,5 +1,5 @@
 # MADE
-### Project Info
+### 1. Project Info
 | Classification | Description |
 | --- | --- |
 | **Project link** | http://15.165.178.130:8080/made |
@@ -8,7 +8,7 @@
 | **Personnel** | 7 |
 | **My part** | Main : 메인 상세페이지 CRUD 구현.<br/>Sub : 개발 환경 구축, 웹 UI 개발, Merge 및 알파테스트 |
    
-### Use Technology
+### 2. Use Technology
 | Classification | Description |
 | --- | --- |
 | **OS** | Windows10 64bit |
@@ -17,7 +17,7 @@
 | **Languages** | JAVA, SQL, JSP, HTML5, CSS3, JavaScript, jQuery, Ajax |
 | **Tool** | Eclipse IDE, SQL Developer, AWS EC2/RDS/S3 |
    
-### Introduction
+### 3. Introduction
 #### SNS 기반 패션 전문 네트워크
 * 서로 공유하며 필요한 정보, 아이디어를 찾아 자신만의 개성있는 스타일을 만듭니다.
 * 사람들은 SNS를 통해 정보와 제품, 스타일을 찾는 사용자의 니즈를 만족시키기 위한 홈페이지를 제작, 사용자들은 자신만의 패션 코디와 다양한 아이템의 사진에 담아 MADE 플랫폼에 올리고 다른 사용자들이 올린 이미지를 서로 공유하며 필요한 정보, 아이디어를 찾아갑니다.
